@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "戰略情報室-beta",
+  "version": "0.0.2",
+  "description": "基於 Gemini 的視覺權重競品分析與戰略報表生成器",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
