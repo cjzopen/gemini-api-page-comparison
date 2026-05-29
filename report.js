@@ -10,9 +10,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!apiKey || !analysisData) throw new Error("資料遺失，請重新啟動。");
 
     // 讀取用戶選擇的模型，若無則使用預設值
-    const textModel = analysisData.models?.text || 'gemini-2.5-flash';
-    // [修改] 圖片模型預設值改為 gemini-2.5-flash-image
-    const imageModel = analysisData.models?.image || 'gemini-2.5-flash-image';
+    const textModel = analysisData.models?.text || 'gemini-3.5-flash';
 
     document.getElementById('target-url').textContent = new URL(analysisData.competitorData.url).hostname;
     document.getElementById('gen-time').textContent = new Date(analysisData.timestamp).toLocaleString();
@@ -26,11 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loading.style.display = 'none';
     dashboard.style.display = 'block';
 
-    // 3. 綁定圖片生成按鈕 (傳入模型 ID)
-    const btnGenImage = document.getElementById('btn-gen-image');
-    btnGenImage.addEventListener('click', () => {
-      generateOneSheet(apiKey, aiResult.visualPrompt, btnGenImage, imageModel);
-    });
+
 
   } catch (err) {
     loading.innerHTML = `<div style="color:red; font-weight:bold;">分析失敗</div><p>${err.message}</p>`;
@@ -80,8 +74,7 @@ async function callGeminiForDualAnalysis(key, data, modelId) {
 ],
 "weaknesses":[{"title":"對手弱點(我方機會)","analysis":"競品哪裡做得不好","advice":"我方如何攻擊"}],
 "strengths":[{"title":"對手強項(我方威脅)","analysis":"競品哪裡做得好","advice":"我方如何防禦"}],
-"overallAdvice":"...",
-"visualPrompt":"一段英文 Prompt，用於生成一張『商務簡報總結 (Business Infographic Summary)』。這是一張『一頁式戰略總結 (One-Page Strategy Strategy)』。核心內容：1. 視覺化展示『攻擊機會 (Attack Opportunities)』與『防禦重點 (Defense Focus)』。2. 包含簡單的圖表(Charts)呈現強弱對比。3. 設計風格：極簡商務 (Minimalist Business), 乾淨 (Clean), 16:9 版面。"
+"overallAdvice":"..."
 }`;
 
   const payload = {
@@ -108,92 +101,7 @@ async function callGeminiForDualAnalysis(key, data, modelId) {
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
-// --- API: 圖片生成 (Imagen vs Gemini Image 多模型適配) ---
-async function generateOneSheet(key, prompt, btn, modelId) {
-  const isImagen = modelId.includes('imagen');
-  // 檢查是否為 2.5 模型 (Flash Image)
-  const isFlash25 = modelId.includes('2.5');
-  
-  const action = isImagen ? 'predict' : 'generateContent';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:${action}?key=${key}`;
-  
-  const container = document.getElementById('visual-summary-container');
-  
-  btn.disabled = true;
-  btn.textContent = `🎨 正在繪製簡報 (${modelId})...`;
-  container.innerHTML = '<div class="spinner" style="border:4px solid #ddd; border-top-color:#8b5cf6; width:30px; height:30px; border-radius:50%; animation:spin 1s linear infinite;"></div>';
 
-  try {
-    let payload = {};
-
-    // 基礎 Prompt: 強制商務簡報風格
-    let enhancedPrompt = prompt + " Minimalist Business Infographic Style. One-page presentation summary slide. Visualizing 'Attack Opportunities' vs 'Defense Focus'. Clean layout, professional corporate design, vector graphics. Aspect Ratio 16:9.";
-
-    // 語言控制：2.5 模型用英文，其他(3.0/Imagen)用繁中
-    if (isFlash25) {
-      enhancedPrompt += " Text labels must be in English.";
-    } else {
-      enhancedPrompt += " Text labels must be in Traditional Chinese (繁體中文).";
-    }
-
-    if (isImagen) {
-      // --- Imagen 4.0 格式 ---
-      payload = {
-        instances: [{ prompt: enhancedPrompt }],
-        parameters: { 
-          sampleCount: 1,
-          aspectRatio: "16:9",
-          personGeneration: "dont_allow"
-        }
-      };
-    } else {
-      // --- Gemini Image 格式 (3.0 Pro Image / 2.5 Flash Image) ---
-      payload = {
-        contents: [{
-          parts: [{ text: enhancedPrompt }]
-        }],
-        generationConfig: {
-          responseModalities: ["IMAGE"],
-          imageConfig: {
-            aspectRatio: "16:9"
-          },
-        }
-      };
-    }
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error?.message || "Image Gen Error");
-
-    let base64 = null;
-
-    if (isImagen) {
-      base64 = json.predictions?.[0]?.bytesBase64Encoded;
-    } else {
-      // Gemini Image 回傳解析
-      // 確保抓取到 inlineData，不管它在第幾個 part
-      const imagePart = json.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-      base64 = imagePart?.inlineData?.data;
-    }
-    
-    if (!base64) throw new Error("無圖片回傳 (Inline Data missing)");
-
-    container.innerHTML = `<img src="data:image/jpeg;base64,${base64}" alt="Strategy Infographic" style="animation: fadeIn 1s;">`;
-    btn.textContent = "✨ 重新生成簡報圖";
-    btn.disabled = false;
-
-  } catch (err) {
-    container.innerHTML = `<div style="color:red">圖片生成失敗：${err.message}</div>`;
-    btn.disabled = false;
-    btn.textContent = "重試";
-    console.error(err);
-  }
-}
 
 // --- 渲染邏輯 (維持原樣) ---
 function renderDashboard(data) {

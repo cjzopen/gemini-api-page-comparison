@@ -3,13 +3,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const apiKeyInput = getEl('api-key');
   const userContextInput = getEl('user-context');
-  const fileInput = getEl('file-input');
   const startBtn = getEl('start-btn');
   const fetchSelfBtn = getEl('fetch-self-btn');
   const clearBtn = getEl('clear-btn');
   const statusMsg = getEl('status-msg');
   const modelTextSelect = getEl('model-text');
-  const modelImageSelect = getEl('model-image');
+  const helpBtn = getEl('help-btn');
 
   // 1. 初始化：載入設定
   const storage = await chrome.storage.local.get([
@@ -26,30 +25,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (modelTextSelect && storage.PREFERRED_MODELS.text) {
       modelTextSelect.value = storage.PREFERRED_MODELS.text;
     }
-    if (modelImageSelect && storage.PREFERRED_MODELS.image) {
-      modelImageSelect.value = storage.PREFERRED_MODELS.image;
-    }
   }
 
-  // 2. 檔案讀取
-  if (fileInput) {
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (userContextInput) {
-          userContextInput.value = event.target.result;
-          // 清除我方網址紀錄，避免誤判
-          chrome.storage.local.set({ 
-            'USER_CONTEXT_CACHE': event.target.result,
-            'USER_CONTEXT_URL': null 
-          });
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
+
 
   // 3. 抓取當前頁面 (我方資料)
   if (fetchSelfBtn) {
@@ -108,8 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const userContext = userContextInput ? userContextInput.value.trim() : '';
       
       const selectedModels = {
-        text: modelTextSelect ? modelTextSelect.value : 'gemini-2.5-flash',
-        image: modelImageSelect ? modelImageSelect.value : 'gemini-2.5-flash-image'
+        text: modelTextSelect ? modelTextSelect.value : 'gemini-3.5-flash'
       };
 
       if (!apiKey) {
@@ -187,12 +164,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         // 清空 UI
         if (apiKeyInput) apiKeyInput.value = '';
         if (userContextInput) userContextInput.value = '';
-        if (fileInput) fileInput.value = '';
 
         showMsg("🗑️ 所有機敏資料與快取已清除！", "green");
       } catch (err) {
         showMsg("清除失敗: " + err.message, "red");
       }
+    });
+  }
+
+  // 6. 說明頁面導覽
+  if (helpBtn) {
+    helpBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: 'instructions.html' });
     });
   }
 

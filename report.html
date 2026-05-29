@@ -217,43 +217,6 @@
     .weakness-col .analysis-item { border-left-color: var(--competitor); }
     .strength-col .analysis-item { border-left-color: var(--success); }
 
-    /* AI 繪圖區塊 */
-    .visual-summary-section {
-      text-align: center;
-      
-      .image-container {
-        width: 100%;
-        min-height: 300px;
-        background: #f1f5f9;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        position: relative;
-        
-        img { max-width: 100%; height: auto; display: block; }
-      }
-      
-      .gen-btn-area { margin-top: 15px; }
-      
-      button {
-        background: linear-gradient(135deg, #8b5cf6, #d946ef);
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: transform 0.2s;
-        
-        &:hover { transform: scale(1.05); }
-        &:disabled { opacity: 0.6; cursor: not-allowed; }
-      }
-    }
   </style>
 </head>
 <body>
@@ -333,16 +296,7 @@
         </div>
       </div>
 
-      <!-- AI 繪圖 (Nano Banana) -->
-      <div class="card visual-summary-section">
-        <h3>🎨 一圖流戰略畫布 (AI Generated)</h3>
-        <div class="image-container" id="visual-summary-container">
-          <div style="color:#94a3b8;">點擊下方按鈕生成戰略視覺圖...</div>
-        </div>
-        <div class="gen-btn-area">
-          <button id="btn-gen-image">✨ 呼叫 Imagen 生成一圖流總結</button>
-        </div>
-      </div>
+
 
       <!-- 總結 -->
       <div class="card" style="background:#1e293b; color:white;">

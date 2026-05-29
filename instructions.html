@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>戰略情報室 - 使用說明與操作指南</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      /* 我方代表色：藍 */
+      --primary-light: #eff6ff;
+      --competitor: #ef4444;
+      /* 競品代表色：紅 */
+      --competitor-light: #fef2f2;
+      --secondary: #475569;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --border: #e2e8f0;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--bg);
+      color: #334155;
+      line-height: 1.6;
+      text-autospace: normal;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 24px;
+
+      h1 {
+        font-size: clamp(1.8rem, 5vw, 2.8rem);
+        color: #1e293b;
+        margin: 0 0 10px 0;
+      }
+
+      .subtitle {
+        font-size: 1.1rem;
+        color: var(--secondary);
+        margin: 0;
+      }
+    }
+
+    /* Card styling matching report */
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 30px;
+      border: 1px solid var(--border);
+
+      h2 {
+        margin-top: 0;
+        color: #1e293b;
+        font-size: 1.4rem;
+        border-bottom: 2px solid #f1f5f9;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+    }
+
+    /* Steps List */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+      }
+
+      .step-num {
+        background: var(--primary);
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+      }
+
+      .step-content {
+        h3 {
+          margin: 0 0 8px 0;
+          color: #1e293b;
+          font-size: 1.1rem;
+        }
+
+        p {
+          margin: 0;
+          color: #64748b;
+          font-size: 0.95rem;
+        }
+
+        .badge {
+          display: inline-block;
+          background: #e2e8f0;
+          color: #334155;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 0.8rem;
+          font-weight: bold;
+          margin-top: 6px;
+        }
+      }
+    }
+
+    /* Concept Grid */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .concept-card {
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+
+      h3 {
+        margin: 0 0 10px 0;
+        color: var(--primary);
+        font-size: 1.1rem;
+      }
+
+      p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Alert Boxes */
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid;
+      font-size: 0.95rem;
+    }
+
+    .alert.info {
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+      color: #1e40af;
+    }
+
+    .alert.warning {
+      background: var(--competitor-light);
+      border-left-color: var(--competitor);
+      color: #991b1b;
+    }
+
+    /* FAQ */
+    .faq-item {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--border);
+
+      &:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+
+      h3 {
+        margin: 0 0 6px 0;
+        font-size: 1.05rem;
+        color: #1e293b;
+
+        &::before {
+          content: "Q. ";
+          color: var(--primary);
+        }
+      }
+
+      p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.95rem;
+      }
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <header>
+      <h1>⚔️ 戰略情報室 操作指南</h1>
+      <p class="subtitle">基於 Gemini 的視覺權重競品分析與戰略報表生成器</p>
+    </header>
+
+    <div class="alert info">
+      💡 <strong>核心理念：</strong>「戰略情報室」不只比較文字內容，更透過<b>視覺權重演算法</b>，模擬真實使用者目光焦點，分析您與競爭對手的網頁設計重心落差。
+    </div>
+    <div class="card">
+      <h2>📋 四步完成深度競品分析</h2>
+      <div class="steps">
+
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>抓取我方網頁資料 (Copy 頁面)</h3>
+            <p>在瀏覽器開啟<strong>我方的產品或服務網頁</strong>，點擊彈出視窗中的 <span class="badge">📑
+                抓取當前頁內容</span>。系統會自動解析並把結構化與加權後的網頁摘要儲存起來。</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>前往競品網頁</h3>
+            <p>在瀏覽器切換至<strong>競爭對手的網頁</strong>，準備分析。</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>選擇戰略分析模型</h3>
+            <p>可自由切換模型：<br>
+              • <strong>Gemini 3.5 Flash</strong>：預設模型，速度極快、價格親民且效能優異。<br>
+              • <strong>Gemini 3.1 Pro</strong>：適合深度戰略推演，能挖掘更具洞察力的攻防策略。</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>輸入 Google Gemini API Key 並啟動分析</h3>
+            <p>打開擴充功能，在密碼輸入框貼上您的 Gemini API 金鑰，輸入完後點擊 <span class="badge">開始全頁分析 (針對競品)🚀</span>，系統將自動開啟新分頁，產出視覺化的「雙向戰略推演與對決報告」。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧠 核心機制與分析指標</h2>
+      <div class="concept-grid">
+        <div class="concept-card">
+          <h3>📐 視覺權重演算法</h3>
+          <p>系統根據 HTML 標籤、樣式等資料，為所有元素計算權重，篩選出並比對真正吸引使用者注意的黃金區塊。</p>
+        </div>
+
+        <div class="concept-card">
+          <h3>📊 五維能力分析</h3>
+          <p>報告將在以下五大核心維度，為我方與競品評分（0-100）：<br>
+            1. <strong>SEO技術</strong>：Schema 結構與 Meta 設定。<br>
+            2. <strong>視覺吸睛</strong>：版面配置與重點突顯。<br>
+            3. <strong>內容深度</strong>：文字說服力與產品資訊。<br>
+            4. <strong>信任訊號</strong>：客戶見證、證書與安全保障。<br>
+            5. <strong>轉換強度</strong>：Call to Action (CTA) 的設計。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>❓ 常見問題</h2>
+
+      <div class="faq-item">
+        <h3>API 金鑰安全嗎？如何更換或刪除？</h3>
+        <p>所有快取資料與金鑰皆僅儲存在您本機的 Chrome 瀏覽器內。若想徹底清除，可以點選擴充功能彈出視窗下方的 <span class="badge"
+            style="color:var(--competitor); background:#fef2f2;">🗑️ 清除所有專案快取與 Key</span> 按鈕。</p>
+      </div>
+
+      <div class="faq-item">
+        <h3>分析出現「分析失敗」怎麼辦？</h3>
+        <p>請檢查您的 API Key 是否正確且有餘額，並確保當前瀏覽的網頁是一般 HTTP/HTTPS 網頁（非 Chrome 系統設定頁或本機檔案）。</p>
+      </div>
+    </div>
+
+    <footer>
+      戰略情報室 &copy; cjzopen
+    </footer>
+  </div>
+</body>
+</html>

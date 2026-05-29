@@ -186,30 +186,22 @@
   </style>
 </head>
 <body>
-  <h2>⚔️ 戰略情報設定</h2>
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 16px;">
+    <h2 style="margin: 0; border-bottom: none; padding-bottom: 0; font-size: 1.2rem; color: #1e293b;">⚔️ 戰略設定</h2>
+    <a href="#" id="help-btn" style="font-size: 0.85rem; color: var(--primary); text-decoration: none; font-weight: 600;">📖 使用說明</a>
+  </div>
 
   <div class="api-section">
     <input type="password" id="api-key" placeholder="貼上你的 Google Gemini API Key">
   </div>
 
-  <!-- 新增模型選擇區 -->
+  <!-- 模型選擇區 -->
   <div class="model-settings">
     <div class="row">
       <label>🧠 戰略分析模型 (Text)</label>
       <select id="model-text">
-        <option value="gemini-3-pro-preview">Gemini 3 Pro Preview (最強大)</option>
-        <option value="gemini-3-flash-preview">Gemini 3 Flash Preview (快速)</option>
-        <option value="gemini-2.5-pro">Gemini 2.5 Pro (平衡)</option>
-        <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (標準/預設)</option>
-        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite (極速/省錢)</option>
-      </select>
-    </div>
-    <div class="row">
-      <label>🎨 圖片生成模型 (Image)</label>
-      <select id="model-image">
-        <option value="gemini-3-pro-image-preview">Gemini 3 Pro Image (高品質)</option>
-        <option value="imagen-4.0-generate-001">Imagen 4.0 (寫實強)</option>
-        <option value="gemini-2.5-flash-image" selected>Gemini 2.5 Flash Image (快速/預設)</option>
+        <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash (標準/預設)</option>
+        <option value="gemini-3.1-pro">Gemini 3.1 Pro (深度分析)</option>
       </select>
     </div>
   </div>
@@ -219,12 +211,7 @@
       <label>我方產品/服務背景資料</label>
       <button id="fetch-self-btn" class="sm-btn" title="先在瀏覽器開啟我方網頁，點此抓取內容">📑 抓取當前頁內容</button>
     </div>
-    <textarea id="user-context" placeholder="請輸入我方產品特色、目標客群或主要優勢..."></textarea>
-    
-    <div class="file-upload">
-      <span>或上傳資料 (.txt, .md, .json)</span>
-      <input type="file" id="file-input" accept=".txt,.md,.json,.csv">
-    </div>
+    <textarea id="user-context" placeholder="請點選上方按鈕抓取我方網頁內容..." readonly></textarea>
   </div>
 
   <button id="start-btn" class="primary-btn">開始全頁分析 (針對競品) 🚀</button>
