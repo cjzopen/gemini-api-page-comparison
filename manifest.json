@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "戰略情報室-beta",
+  "name": "PageDuel 戰略情報室",
   "version": "0.0.3",
   "description": "基於 Gemini 的視覺權重競品分析與戰略報表生成器",
   "permissions": ["activeTab", "scripting", "storage"],
