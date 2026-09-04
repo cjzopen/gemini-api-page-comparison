@@ -1,3 +1,114 @@
+// ===== Gemini 模型清單設定 =====
+// 清單改由 Google 官方 ListModels API 動態取得，Google 上/下架模型時不需再手動改程式碼。
+const MODEL_LIST_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+// 沒有 API Key 或連線失敗時的後備清單 (只是讓 UI 不空白，實際仍以 API 回傳為準)
+const FALLBACK_MODELS = [
+  { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash (標準/預設)' },
+  { id: 'gemini-3.1-pro', label: 'Gemini 3.1 Pro (深度分析)' }
+];
+const DEFAULT_MODEL_ID = FALLBACK_MODELS[0].id;
+
+// 只保留 Gemini 文字系列 (未來若 Google 推出新家族，在此加前綴即可)
+const MODEL_FAMILY_PREFIXES = ['gemini-'];
+
+// 過濾掉與「文字戰略分析」無關的模型：生圖 / 影片 / 語音 / 向量 / 即時對話 / 舊版純視覺
+const MODEL_EXCLUDE_PATTERNS = [
+  'embedding', 'embed',      // 向量
+  'imagen', 'image',         // 生圖 (含 flash-image / image-generation)
+  'veo', 'video',            // 影片
+  'tts', 'audio', 'speech',  // 語音
+  'live', 'realtime',        // 即時串流對話
+  'vision',                  // 舊版純圖片分析 (gemini-pro-vision)
+  'aqa'                      // 問答歸因專用
+];
+
+function normalizeModelId(name) {
+  return String(name || '').replace(/^models\//, '');
+}
+
+// 判斷是否為可用於戰略分析的文字模型
+function isStrategyTextModel(model) {
+  const id = normalizeModelId(model.name).toLowerCase();
+  if (!id) return false;
+
+  // 必須支援一般文字生成
+  const methods = model.supportedGenerationMethods || [];
+  if (!methods.includes('generateContent')) return false;
+
+  if (!MODEL_FAMILY_PREFIXES.some(prefix => id.startsWith(prefix))) return false;
+  if (MODEL_EXCLUDE_PATTERNS.some(pattern => id.includes(pattern))) return false;
+
+  return true;
+}
+
+// 排序：版本新的在前 → 正式版優先於預覽版 → Pro > Flash > Flash-Lite
+function modelSortKey(id) {
+  const versionMatch = id.match(/gemini-(\d+(?:\.\d+)?)/);
+  const version = versionMatch ? parseFloat(versionMatch[1]) : 0;
+  const isPreview = /(preview|exp|experimental|latest|\d{3,})/.test(id) ? 1 : 0;
+  let tier = 3;
+  if (id.includes('pro')) tier = 0;
+  else if (id.includes('flash-lite')) tier = 2;
+  else if (id.includes('flash')) tier = 1;
+  return [-version, isPreview, tier, id.length, id];
+}
+
+function compareModels(a, b) {
+  const ka = modelSortKey(a.id);
+  const kb = modelSortKey(b.id);
+  for (let i = 0; i < ka.length; i++) {
+    if (ka[i] < kb[i]) return -1;
+    if (ka[i] > kb[i]) return 1;
+  }
+  return 0;
+}
+
+function buildModelLabel(model) {
+  const id = normalizeModelId(model.name);
+  const display = model.displayName || id;
+  const isPreview = /(preview|exp|experimental)/i.test(id);
+  return isPreview ? `${display} [預覽]` : display;
+}
+
+// 向 Google 取得完整模型清單 (自動翻頁)，再過濾成文字分析可用的模型
+async function fetchGeminiModels(apiKey) {
+  const rawModels = [];
+  let pageToken = '';
+  let page = 0;
+
+  do {
+    const params = new URLSearchParams({ key: apiKey, pageSize: '200' });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await fetch(`${MODEL_LIST_ENDPOINT}?${params.toString()}`);
+    if (!res.ok) {
+      let detail = '';
+      try {
+        const errJson = await res.json();
+        detail = errJson?.error?.message || '';
+      } catch (e) { /* 忽略非 JSON 的錯誤內容 */ }
+      throw new Error(`(${res.status}) ${detail || '無法取得模型清單'}`);
+    }
+
+    const json = await res.json();
+    rawModels.push(...(json.models || []));
+    pageToken = json.nextPageToken || '';
+    page++;
+  } while (pageToken && page < 10);
+
+  return rawModels
+    .filter(isStrategyTextModel)
+    .map(m => ({ id: normalizeModelId(m.name), label: buildModelLabel(m) }))
+    .sort(compareModels);
+}
+
+// 沒有偏好設定時，挑一個合理的預設 (最新的正式版 Flash，其次是清單第一個)
+function pickDefaultModel(models) {
+  const stableFlash = models.find(m => m.id.includes('flash') && !/(preview|exp)/i.test(m.id));
+  return (stableFlash || models[0])?.id || DEFAULT_MODEL_ID;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const getEl = (id) => document.getElementById(id);
 
@@ -8,23 +119,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   const clearBtn = getEl('clear-btn');
   const statusMsg = getEl('status-msg');
   const modelTextSelect = getEl('model-text');
+  const modelHint = getEl('model-hint');
   const helpBtn = getEl('help-btn');
 
   // 1. 初始化：載入設定
   const storage = await chrome.storage.local.get([
-    'GEMINI_API_KEY', 
-    'USER_CONTEXT_CACHE', 
-    'USER_CONTEXT_URL', 
-    'PREFERRED_MODELS'
+    'GEMINI_API_KEY',
+    'USER_CONTEXT_CACHE',
+    'USER_CONTEXT_URL',
+    'PREFERRED_MODELS',
+    'MODEL_LIST_CACHE'
   ]);
-  
+
   if (apiKeyInput && storage.GEMINI_API_KEY) apiKeyInput.value = storage.GEMINI_API_KEY;
   if (userContextInput && storage.USER_CONTEXT_CACHE) userContextInput.value = storage.USER_CONTEXT_CACHE;
-  
-  if (storage.PREFERRED_MODELS) {
-    if (modelTextSelect && storage.PREFERRED_MODELS.text) {
-      modelTextSelect.value = storage.PREFERRED_MODELS.text;
-    }
+
+  // 2. 模型清單：先用快取 (或後備清單) 讓 UI 立即可用，有 Key 就抓一次最新清單
+  const preferredModelId = storage.PREFERRED_MODELS?.text || '';
+  const cachedModels = storage.MODEL_LIST_CACHE?.models;
+
+  if (Array.isArray(cachedModels) && cachedModels.length > 0) {
+    renderModelOptions(cachedModels, preferredModelId);
+    setModelHint(`共 ${cachedModels.length} 個可用模型`);
+  } else {
+    renderModelOptions(FALLBACK_MODELS, preferredModelId);
+    setModelHint('尚未載入官方清單，目前顯示預設模型');
+  }
+
+  if (storage.GEMINI_API_KEY) loadModelList(storage.GEMINI_API_KEY);
+
+  // 輸入 (或換掉) API Key 後抓一次；不同 Key 可用的模型可能不同
+  if (apiKeyInput) {
+    apiKeyInput.addEventListener('change', () => {
+      const key = apiKeyInput.value.trim();
+      if (key && key !== storage.GEMINI_API_KEY) loadModelList(key);
+    });
   }
 
 
@@ -86,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const userContext = userContextInput ? userContextInput.value.trim() : '';
       
       const selectedModels = {
-        text: modelTextSelect ? modelTextSelect.value : 'gemini-3.5-flash'
+        text: (modelTextSelect && modelTextSelect.value) || DEFAULT_MODEL_ID
       };
 
       if (!apiKey) {
@@ -158,12 +287,15 @@ document.addEventListener('DOMContentLoaded', async () => {
           'USER_CONTEXT_CACHE',
           'USER_CONTEXT_URL',
           'PREFERRED_MODELS',
+          'MODEL_LIST_CACHE',
           'CURRENT_ANALYSIS_DATA'
         ]);
 
         // 清空 UI
         if (apiKeyInput) apiKeyInput.value = '';
         if (userContextInput) userContextInput.value = '';
+        renderModelOptions(FALLBACK_MODELS, '');
+        setModelHint('尚未載入官方清單，目前顯示預設模型');
 
         showMsg("🗑️ 所有機敏資料與快取已清除！", "green");
       } catch (err) {
@@ -181,6 +313,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // --- 輔助函式 ---
+
+  // 把模型清單畫進下拉選單，並盡量保留使用者原本的選擇
+  function renderModelOptions(models, preferredId) {
+    if (!modelTextSelect) return;
+
+    modelTextSelect.innerHTML = '';
+    models.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = model.label || model.id;
+      opt.title = model.id;
+      modelTextSelect.appendChild(opt);
+    });
+
+    const exists = models.some(m => m.id === preferredId);
+    modelTextSelect.value = exists ? preferredId : pickDefaultModel(models);
+  }
+
+  function setModelHint(text, isError = false) {
+    if (!modelHint) return;
+    modelHint.textContent = text;
+    modelHint.classList.toggle('error', isError);
+  }
+
+  // 向 Google 取得最新模型清單，同時更新 UI 與快取
+  async function loadModelList(apiKey) {
+    setModelHint('正在取得 Google 最新模型清單…');
+
+    try {
+      const models = await fetchGeminiModels(apiKey);
+      if (models.length === 0) throw new Error('此 API Key 沒有可用的文字模型');
+
+      const keep = modelTextSelect ? modelTextSelect.value : '';
+      renderModelOptions(models, keep);
+      await chrome.storage.local.set({ 'MODEL_LIST_CACHE': { models, fetchedAt: Date.now() } });
+      setModelHint(`共 ${models.length} 個可用模型`);
+    } catch (err) {
+      setModelHint(`模型清單更新失敗：${err.message}`, true);
+    }
+  }
 
   function isSamePage(urlA, urlB) {
     if (!urlA || !urlB) return false;
